@@ -1,45 +1,50 @@
-const http = require('http');
+const http = require('http')
+const {
+  userController,
+  homeController,
+  logController,
+} = require('./controller')
+const headers = {
+  'Access-Control-Allow-Headers':
+    'Content-Type, Authorization, Content-Length, X-Requested-With',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'PATCH, POST, GET,OPTIONS,DELETE',
+  'Content-Type': 'application/json',
+}
 
-const user_list = [];
-
-const server_listener = (req, res) => {
-  router(req, res);
-};
-
-// switch 路由
 const router = (req, res) => {
-  if (req.url === '/' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.write('歡迎光臨');
-    res.end();
-    return;
+  // 組合請求方法和URL作為switch的條件
+  const route = `${req.method} ${req.url}`
+
+  switch (route) {
+    case 'GET /':
+      homeController.getHome(req, res)
+      break
+
+    case 'GET /user':
+      userController.getUsers(req, res)
+      break
+
+    case 'POST /user':
+      userController.createUser(req, res)
+      break
+
+    case 'GET /log':
+      logController.getLog(req, res)
+      break
+
+    case 'OPTIONS /':
+      res.writeHead(200, headers)
+      res.end()
+      break
+
+    default:
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.write(JSON.stringify({ message: 'Not Found' }))
+      res.end()
   }
+}
 
-  if (req.url === '/user' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.write(JSON.stringify(user_list));
-    res.end();
-    return;
-  } else if (req.url === '/user' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString(); // 將 Buffer 轉換成字符串
-    });
-    req.on('end', () => {
-      const userData = JSON.parse(body); // 現在可以解析 JSON 字符串
-      user_list.push(userData); // 將用戶資料添加到陣列中
-      res.writeHead(201, { 'Content-Type': 'application/json' });
-      res.write(JSON.stringify(user_list));
-      res.end();
-    });
-    return;
-  }
-
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.write(JSON.stringify({ message: 'Not Found' }));
-  res.end();
-};
-
-const server = http.createServer(server_listener);
-
-server.listen(1234);
+// 啟動 server
+const server = http.createServer((req, res) => router(req, res))
+server.listen(1234)
